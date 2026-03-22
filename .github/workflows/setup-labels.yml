@@ -1,0 +1,46 @@
+name: Setup issue labels
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure required labels exist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const required = [
+              { name: 'feature', color: '1D76DB', description: 'New feature request' },
+              { name: 'discussion', color: 'D4C5F9', description: 'Discussion topic' },
+            ];
+
+            for (const label of required) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                });
+                core.info(`Label exists: ${label.name}`);
+              } catch (e) {
+                if (e.status === 404) {
+                  core.info(`Creating label: ${label.name}`);
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name,
+                    color: label.color,
+                    description: label.description,
+                  });
+                } else {
+                  throw e;
+                }
+              }
+            }
