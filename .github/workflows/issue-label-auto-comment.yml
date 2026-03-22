@@ -1,0 +1,51 @@
+name: Auto comment by label
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  issues: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post canned response based on label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = (context.payload.issue.labels || []).map(l => l.name);
+
+            const relevant = (l) => ['bug', 'feature', 'discussion'].includes(l);
+            const labeledEventLabel = context.payload.action === 'labeled' && context.payload.label
+              ? context.payload.label.name
+              : null;
+
+            // Prefer the label that was just added; otherwise, look at all labels on the issue.
+            const selected = (labeledEventLabel && relevant(labeledEventLabel))
+              ? labeledEventLabel
+              : labels.find(relevant);
+
+            let body = null;
+            switch (selected) {
+              case 'bug':
+                body = 'Thank you. We will fix it.';
+                break;
+              case 'feature':
+                body = 'Thank you, we will consider to include this feature.';
+                break;
+              case 'discussion':
+                body = 'Thanks for starting this discussion! We welcome community input.';
+                break;
+              default:
+                core.info('No matching label found; skipping comment.');
+                return;
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body,
+            });

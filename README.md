@@ -1,2 +1,2 @@
-# MCP-Universe-Research-0030
-Research initiative repository for an MCP-based evaluation framework to assess LLM capabilities.
+# MCP-Universe-Research
+A comprehensive evaluation framework for LLMs to use the novel MCP technique.
